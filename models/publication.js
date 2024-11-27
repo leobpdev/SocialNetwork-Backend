@@ -6,7 +6,22 @@ const publicationSchema = new mongoose.Schema({
     required: true,
     minlength: 5
   },
-  important: Boolean,
+  imageUrl: {
+    type: String, // Almacena la URL de la imagen
+    required: true, // Hazlo opcional si no todas las publicaciones tendrán imágenes
+    validate: {
+      validator: function (v) {
+        return /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)$/i.test(v); // Valida formatos comunes de imágenes
+      },
+      message: props => `${props.value} no es una URL válida para una imagen.`,
+    },
+  },
+  likes: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+  ],
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
