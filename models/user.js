@@ -6,8 +6,24 @@ const userSchema = mongoose.Schema({
     required: true,
     unique: true
   },
-  name: String,
-  passwordHash: String,
+  name:{
+    type: String,
+    required: true,
+  },
+  passwordHash: {
+    type: String,
+    required: true,
+  },
+  imageUrl: {
+    type: String, // Almacena la URL de la imagen
+    required: true, // Hazlo opcional si no todas las publicaciones tendrán imágenes
+    validate: {
+      validator: function (v) {
+        return /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)$/i.test(v); // Valida formatos comunes de imágenes
+      },
+      message: props => `${props.value} no es una URL válida para una imagen.`,
+    },
+  },
   publications: [
     {
       type: mongoose.Schema.Types.ObjectId,
@@ -21,7 +37,6 @@ userSchema.set('toJSON', {
     returnedObject.id = returnedObject._id.toString()
     delete returnedObject._id
     delete returnedObject.__v
-    // the passwordHash should not be revealed
     delete returnedObject.passwordHash
   }
 })
