@@ -11,14 +11,29 @@ const getTokenFrom = request => {
   return null
 }
 
-publicationsRouter.get('/', async (request, response) => {
-  const publications = await Publication
-    .find({}).populate('user', { username: 1, name: 1, imageUrl:1 })
-  response.json(publications)
+publicationsRouter.get('/', async (request, response, next) => {
+  try {
+    const decodedToken = jwt.verify(getTokenFrom(request), process.env.SECRET)
+    const userId = decodedToken?.id
+
+    const publications = await Publication.find({}).populate('user', { name: 1, imageUrl: 1 })
+    const publicationsWithHasLiked = publications.map((publication) => {
+      return {
+        ...publication.toJSON(),
+        hasLiked: publication.likes.includes(userId),
+      }
+    })
+
+    response.json(publicationsWithHasLiked)
+  } catch (error) {
+    next(error)
+  }
 })
 
 publicationsRouter.get('/:id', async (request, response) => {
-  const publication = await Publication.findById(request.params.id)
+  const publication = await Publication
+      .findById(request.params.id)
+      .populate('user', { username: 1, name: 1, imageUrl: 1 })
   if (publication) {
     response.json(publication)
   } else {
@@ -26,41 +41,52 @@ publicationsRouter.get('/:id', async (request, response) => {
   }
 })
 
-publicationsRouter.put('/:id/like', async (request, response, next) => {
+publicationsRouter.put('/:id', async (request, response, next) => {
   try {
-    const decodedToken = jwt.verify(getTokenFrom(request), process.env.SECRET);
+    const decodedToken = jwt.verify(getTokenFrom(request), process.env.SECRET)
 
     if (!decodedToken.id) {
-      return response.status(401).json({ error: 'Invalid token' });
+      return response.status(401).json({ error: 'Invalid token' })
     }
 
-    const userId = decodedToken.id;
-    const publication = await Publication.findById(request.params.id);
+    const userId = decodedToken.id
+    const publication = await Publication.findById(request.params.id)
 
     if (!publication) {
-      return response.status(404).json({ error: 'Publication not found' });
+      console.error('Publicación no encontrada con ID:', request.params.id)
+      return response.status(404).json({ error: 'Publication not found' })
     }
 
     // Verificar si el usuario ya ha dado like
-    const likes = publication.likes || [];
-    const userIndex = likes.indexOf(userId);
+    const likes = publication.likes || []
+    const userIndex = likes.indexOf(userId)
 
     if (userIndex === -1) {
-      // Si no ha dado like, lo añadimos
-      likes.push(userId);
+      // Si el usuario no ha dado like, lo añadimos
+      likes.push(userId)
     } else {
-      // Si ya ha dado like, lo eliminamos (quita el like)
-      likes.splice(userIndex, 1);
+      // Si ya ha dado like, lo eliminamos
+      likes.splice(userIndex, 1)
     }
 
-    publication.likes = likes;
-    const updatedPublication = await publication.save();  // Guardar la publicación con los likes actualizados
+    publication.likes = likes
+    const updatedPublication = await publication.save()
 
-    response.json(updatedPublication); // Devolver la publicación actualizada
+    // Ahora devolvemos la publicación actualizada con la información del usuario
+    const populatedPublication = await updatedPublication.populate('user', { name: 1, imageUrl: 1 })
+    
+    // Calculamos si el usuario que hizo la petición ya dio like a la publicación
+    const hasLiked = populatedPublication.likes.includes(userId)
+
+    // Devolvemos la publicación con el estado `hasLiked`
+    response.json({
+      ...populatedPublication.toJSON(),
+      hasLiked,
+    })
   } catch (error) {
-    next(error);
+    next(error)
   }
-});
+})
 
 publicationsRouter.delete('/:id', async (request, response) => {
   await Publication.findByIdAndDelete(request.params.id)

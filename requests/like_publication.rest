@@ -1,0 +1,7 @@
+PUT http://localhost:3001/api/publications/674475bae54f6a900c13c32e
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1jbG92aW4iLCJpZCI6IjY3NDQ4YTIxZTU0ZjZhOTAwYzEzYzNkNCIsImlhdCI6MTczMjgwMDMxMn0.8M7NPg0_iDHWEVBO5B5P8weT6DKis0Y72nrzB6HaNPA
+
+{
+ "likes": ["67448a21e54f6a900c13c3d4"]
+}
