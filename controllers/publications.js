@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken')
 const publicationsRouter = require('express').Router()
 const Publication = require('../models/publication')
-const User = require('../models/user')
 
 const getTokenFrom = request => {
   const authorization = request.get('authorization')
@@ -13,20 +12,37 @@ const getTokenFrom = request => {
 
 publicationsRouter.get('/', async (request, response, next) => {
   try {
-    const decodedToken = jwt.verify(getTokenFrom(request), process.env.SECRET)
-    const userId = decodedToken?.id
+    // Intentar obtener el token del header Authorization
+    const token = getTokenFrom(request)
 
-    const publications = await Publication.find({}).populate('user', { name: 1, imageUrl: 1 })
-    const publicationsWithHasLiked = publications.map((publication) => {
-      return {
-        ...publication.toJSON(),
-        hasLiked: publication.likes.includes(userId),
-      }
-    })
+    let publicationsWithHasLiked = []
 
-    response.json(publicationsWithHasLiked)
+    // Si hay un token, lo verificamos y obtenemos el userId
+    if (token) {
+      const decodedToken = jwt.verify(token, process.env.SECRET)
+      const userId = decodedToken?.id
+
+      // Obtener las publicaciones y añadir `hasLiked` si el token es válido
+      const publications = await Publication.find({}).populate('user', { name: 1, imageUrl: 1 })
+      publicationsWithHasLiked = publications.map((publication) => {
+        return {
+          ...publication.toJSON(),
+          hasLiked: publication.likes.includes(userId),  // Añadir `hasLiked` solo si el token es válido
+        }
+      })
+    } else {
+      // Si no hay token, obtenemos las publicaciones pero sin el campo `hasLiked`
+      const publications = await Publication.find({}).populate('user', { name: 1, imageUrl: 1 })
+      publicationsWithHasLiked = publications.map((publication) => {
+        return {
+          ...publication.toJSON(),
+        }
+      })
+    }
+
+    response.json(publicationsWithHasLiked)  // Devolver las publicaciones con o sin `hasLiked`
   } catch (error) {
-    next(error)
+    next(error)  // Si hay un error, pasar al siguiente middleware de manejo de errores
   }
 })
 
