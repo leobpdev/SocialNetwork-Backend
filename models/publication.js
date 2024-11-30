@@ -8,7 +8,7 @@ const publicationSchema = new mongoose.Schema({
   },
   imageUrl: {
     type: String, 
-    required: true, // Hazlo opcional si no todas las publicaciones tendrán imágenes
+    required: false, // Hazlo opcional si no todas las publicaciones tendrán imágenes
   },
   likes: [
     {
