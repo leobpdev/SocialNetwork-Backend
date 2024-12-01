@@ -1,6 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const mongoose = require('mongoose')
+const path = require('path')
 require('express-async-errors')
 
 const publicationsRouter = require('./controllers/publications')
@@ -30,15 +31,23 @@ app.use(express.static('dist'))
 app.use(express.json())
 app.use(middleware.requestLogger)
 
+// Rutas de API
 app.use('/api/publications', publicationsRouter)
 app.use('/api/users', usersRouter)
 app.use('/api/login', loginRouter)
 
+// Rutas adicionales solo para entorno de prueba
 if (process.env.NODE_ENV === 'test') {
   const testingRouter = require('./controllers/testing')
   app.use('/api/testing', testingRouter)
 }
 
+// Redirigir todas las rutas al archivo index.html
+app.get('*', (request, response) => {
+  response.sendFile(path.resolve(__dirname, 'dist', 'index.html'))
+})
+
+// Manejo de errores y rutas desconocidas
 app.use(middleware.unknownEndpoint)
 app.use(middleware.errorHandler)
 
