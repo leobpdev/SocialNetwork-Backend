@@ -2,14 +2,9 @@ const jwt = require('jsonwebtoken')
 const publicationsRouter = require('express').Router()
 const Publication = require('../models/publication')
 const multer = require('multer')
-
 const fs = require('node:fs')
-const upload = multer({ dest:'uploads/ '})
 
-function convertImageToBase64(filePath) {
-  const imageBuffer = fs.readFileSync(filePath)  // Leemos el archivo como un buffer
-  return imageBuffer.toString('base64')  // Convertimos el buffer a Base64
-}
+const upload = multer({ dest:'uploads/ '})
 
 const getTokenFrom = request => {
   const authorization = request.get('authorization')
@@ -17,6 +12,11 @@ const getTokenFrom = request => {
     return authorization.replace('Bearer ', '')
   }
   return null
+}
+
+function convertImageToBase64(filePath) {
+  const imageBuffer = fs.readFileSync(filePath)  // Leemos el archivo como un buffer
+  return imageBuffer.toString('base64')  // Convertimos el buffer a Base64
 }
 
 publicationsRouter.get('/', async (request, response, next) => {
