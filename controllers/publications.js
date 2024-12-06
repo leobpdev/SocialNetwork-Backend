@@ -55,6 +55,42 @@ publicationsRouter.get('/', async (request, response, next) => {
   }
 })
 
+publicationsRouter.get('/:profileToken', async (request, response, next) => {
+  try {
+    const token = getTokenFrom(request) // Token del usuario logueado
+    const { profileToken } = request.params // Token del perfil (opcional)
+
+    // Si se envía el token del perfil, descomponerlo
+    if (profileToken) {
+      const decodedProfileToken = jwt.verify(profileToken, process.env.SECRET)
+      profileUserId = decodedProfileToken?.id
+    }
+
+    // Verificar el token del usuario logueado
+    if (token) {
+      const decodedToken = jwt.verify(token, process.env.SECRET)
+      loggedUserId = decodedToken?.id
+    }
+
+    // Definir el filtro de búsqueda
+    const filter = profileUserId ? { user: profileUserId } : {}
+
+    // Obtener publicaciones según el filtro
+    const publications = await Publication.find(filter).populate('user', { name: 1, imageUrl: 1 })
+
+    // Añadir `hasLiked` a las publicaciones
+    publicationsWithHasLiked = publications.map((publication) => ({
+      ...publication.toJSON(),
+      hasLiked: loggedUserId ? publication.likes.includes(loggedUserId) : false,
+    }))
+
+    // Responder con las publicaciones procesadas
+    response.json(publicationsWithHasLiked)
+  } catch (error) {
+    next(error)
+  }
+})
+
 publicationsRouter.post('/', upload.single('image'), async (request, response) => {
   try {
     // Extraer y validar el token
@@ -84,7 +120,7 @@ publicationsRouter.post('/', upload.single('image'), async (request, response) =
     // Creamos y guardamos la nueva publicación con la imagen en Base64
     const newPublication = new Publication({
       content,
-      imageUrl: `data:image/png;base64,${imageBase64}`,  // Guardamos la imagen como Base64
+      imageUrl: `data:image/pngbase64,${imageBase64}`,  // Guardamos la imagen como Base64
       likes: [],
       user: userId, // Asociar la publicación al usuario autenticado
     })
