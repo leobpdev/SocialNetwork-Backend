@@ -55,17 +55,6 @@ publicationsRouter.get('/', async (request, response, next) => {
   }
 })
 
-publicationsRouter.get('/:id', async (request, response) => {
-  const publication = await Publication
-    .findById(request.params.id)
-    .populate('user', { username: 1, name: 1, imageUrl: 1 })
-  if (publication) {
-    response.json(publication)
-  } else {
-    response.status(404).end()
-  }
-})
-
 publicationsRouter.post('/', upload.single('image'), async (request, response) => {
   try {
     // Extraer y validar el token
@@ -112,7 +101,6 @@ publicationsRouter.post('/', upload.single('image'), async (request, response) =
     response.status(500).json({ error: error.message })
   }
 })
-
 
 publicationsRouter.put('/:id', async (request, response, next) => {
   try {

@@ -6,7 +6,7 @@ const userSchema = mongoose.Schema({
     required: true,
     unique: true
   },
-  name:{
+  name: {
     type: String,
     required: true,
   },
@@ -24,10 +24,16 @@ const userSchema = mongoose.Schema({
       message: props => `${props.value} no es una URL válida para una imagen.`,
     },
   },
-  publications: [
+  followers: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Publication'
+      ref: 'User'
+    }
+  ],
+  following: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
     }
   ],
 })
