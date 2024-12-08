@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken')
 const publicationsRouter = require('express').Router()
 const Publication = require('../models/publication')
+const User = require('../models/user')
 const multer = require('multer')
 const fs = require('node:fs')
 
@@ -32,7 +33,7 @@ publicationsRouter.get('/', async (request, response, next) => {
       const userId = decodedToken?.id
 
       // Obtener las publicaciones y añadir `hasLiked` si el token es válido
-      const publications = await Publication.find({}).populate('user', { name: 1, imageUrl: 1 })
+      const publications = await Publication.find({}).populate('user', { username: 1, name: 1, imageUrl: 1 })
       publicationsWithHasLiked = publications.map((publication) => {
         return {
           ...publication.toJSON(),
@@ -41,7 +42,7 @@ publicationsRouter.get('/', async (request, response, next) => {
       })
     } else {
       // Si no hay token, obtenemos las publicaciones pero sin el campo `hasLiked`
-      const publications = await Publication.find({}).populate('user', { name: 1, imageUrl: 1 })
+      const publications = await Publication.find({}).populate('user', { username: 1, name: 1, imageUrl: 1 })
       publicationsWithHasLiked = publications.map((publication) => {
         return {
           ...publication.toJSON(),
@@ -55,16 +56,10 @@ publicationsRouter.get('/', async (request, response, next) => {
   }
 })
 
-publicationsRouter.get('/:profileToken', async (request, response, next) => {
+publicationsRouter.get('/:username', async (request, response, next) => {
   try {
     const token = getTokenFrom(request) // Token del usuario logueado
-    const { profileToken } = request.params // Token del perfil (opcional)
-
-    // Si se envía el token del perfil, descomponerlo
-    if (profileToken) {
-      const decodedProfileToken = jwt.verify(profileToken, process.env.SECRET)
-      profileUserId = decodedProfileToken?.id
-    }
+    const { username } = request.params
 
     // Verificar el token del usuario logueado
     if (token) {
@@ -72,14 +67,19 @@ publicationsRouter.get('/:profileToken', async (request, response, next) => {
       loggedUserId = decodedToken?.id
     }
 
-    // Definir el filtro de búsqueda
-    const filter = profileUserId ? { user: profileUserId } : {}
+    // Buscar el usuario correspondiente al `username`
+    const user = await User.findOne({ username })
+    console.log(user)
+    if (!user) {
+      return response.status(404).json({ error: 'Usuario no encontrado' })
+    }
 
-    // Obtener publicaciones según el filtro
+    // Filtrar las publicaciones por el ID del usuario encontrado
+    const filter = { user: user._id }
     const publications = await Publication.find(filter).populate('user', { name: 1, imageUrl: 1 })
 
     // Añadir `hasLiked` a las publicaciones
-    publicationsWithHasLiked = publications.map((publication) => ({
+    const publicationsWithHasLiked = publications.map((publication) => ({
       ...publication.toJSON(),
       hasLiked: loggedUserId ? publication.likes.includes(loggedUserId) : false,
     }))

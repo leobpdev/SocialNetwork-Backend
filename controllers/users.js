@@ -1,5 +1,4 @@
 const bcryptjs = require('bcryptjs')
-const jwt = require('jsonwebtoken')
 const usersRouter = require('express').Router()
 const User = require('../models/user')
 
@@ -9,18 +8,19 @@ usersRouter.get('/', async (request, response) => {
   response.json(users)
 })
 
-usersRouter.get('/:profileToken', async (request, response) => {
+usersRouter.get('/:username', async (request, response) => {
   try {
-    const { profileToken } = request.params
+    const { username } = request.params
+    const user = await User.findOne({ username }) // Busca por username
 
-    const decodedToken = jwt.verify(profileToken, process.env.SECRET) // Verifica el token
-    const userId = decodedToken?.id // Obtiene el ID del usuario del token
+    if (!user) {
+      return response.status(404).json({ error: 'Usuario no encontrado' })
+    }
 
-    users = await User.find({ _id: userId })
-
+    response.json(user)
   } catch (error) {
-    console.error('Token no válido:', error.message)
-    return response.status(401).json({ error: 'Token inválido o expirado' })
+    console.error('Error al obtener el perfil del usuario:', error.message)
+    return response.status(500).json({ error: 'Error en el servidor' })
   }
 })
 
