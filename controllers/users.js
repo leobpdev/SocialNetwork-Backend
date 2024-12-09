@@ -4,8 +4,24 @@ const User = require('../models/user')
 
 usersRouter.get('/', async (request, response) => {
   const users = await User
-    .find({}).populate('publications', { content: 1, important: 1 })
+    .find({})
   response.json(users)
+})
+
+usersRouter.get('/:username', async (request, response) => {
+  try {
+    const { username } = request.params
+    const user = await User.findOne({ username }) // Busca por username
+
+    if (!user) {
+      return response.status(404).json({ error: 'Usuario no encontrado' })
+    }
+
+    response.json(user)
+  } catch (error) {
+    console.error('Error al obtener el perfil del usuario:', error.message)
+    return response.status(500).json({ error: 'Error en el servidor' })
+  }
 })
 
 usersRouter.post('/', async (request, response) => {
