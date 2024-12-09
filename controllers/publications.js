@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken')
 const publicationsRouter = require('express').Router()
 const Publication = require('../models/publication')
+const User = require('../models/user')
 const multer = require('multer')
 const fs = require('node:fs')
 
@@ -32,7 +33,7 @@ publicationsRouter.get('/', async (request, response, next) => {
       const userId = decodedToken?.id
 
       // Obtener las publicaciones y añadir `hasLiked` si el token es válido
-      const publications = await Publication.find({}).populate('user', { name: 1, imageUrl: 1 })
+      const publications = await Publication.find({}).populate('user', { username: 1, name: 1, imageUrl: 1 })
       publicationsWithHasLiked = publications.map((publication) => {
         return {
           ...publication.toJSON(),
@@ -41,7 +42,7 @@ publicationsRouter.get('/', async (request, response, next) => {
       })
     } else {
       // Si no hay token, obtenemos las publicaciones pero sin el campo `hasLiked`
-      const publications = await Publication.find({}).populate('user', { name: 1, imageUrl: 1 })
+      const publications = await Publication.find({}).populate('user', { username: 1, name: 1, imageUrl: 1 })
       publicationsWithHasLiked = publications.map((publication) => {
         return {
           ...publication.toJSON(),
@@ -55,14 +56,38 @@ publicationsRouter.get('/', async (request, response, next) => {
   }
 })
 
-publicationsRouter.get('/:id', async (request, response) => {
-  const publication = await Publication
-    .findById(request.params.id)
-    .populate('user', { username: 1, name: 1, imageUrl: 1 })
-  if (publication) {
-    response.json(publication)
-  } else {
-    response.status(404).end()
+publicationsRouter.get('/:username', async (request, response, next) => {
+  try {
+    const token = getTokenFrom(request) // Token del usuario logueado
+    const { username } = request.params
+
+    // Verificar el token del usuario logueado
+    if (token) {
+      const decodedToken = jwt.verify(token, process.env.SECRET)
+      loggedUserId = decodedToken?.id
+    }
+
+    // Buscar el usuario correspondiente al `username`
+    const user = await User.findOne({ username })
+    console.log(user)
+    if (!user) {
+      return response.status(404).json({ error: 'Usuario no encontrado' })
+    }
+
+    // Filtrar las publicaciones por el ID del usuario encontrado
+    const filter = { user: user._id }
+    const publications = await Publication.find(filter).populate('user', { name: 1, imageUrl: 1 })
+
+    // Añadir `hasLiked` a las publicaciones
+    const publicationsWithHasLiked = publications.map((publication) => ({
+      ...publication.toJSON(),
+      hasLiked: loggedUserId ? publication.likes.includes(loggedUserId) : false,
+    }))
+
+    // Responder con las publicaciones procesadas
+    response.json(publicationsWithHasLiked)
+  } catch (error) {
+    next(error)
   }
 })
 
@@ -95,7 +120,7 @@ publicationsRouter.post('/', upload.single('image'), async (request, response) =
     // Creamos y guardamos la nueva publicación con la imagen en Base64
     const newPublication = new Publication({
       content,
-      imageUrl: `data:image/png;base64,${imageBase64}`,  // Guardamos la imagen como Base64
+      imageUrl: `data:image/pngbase64,${imageBase64}`,  // Guardamos la imagen como Base64
       likes: [],
       user: userId, // Asociar la publicación al usuario autenticado
     })
@@ -112,7 +137,6 @@ publicationsRouter.post('/', upload.single('image'), async (request, response) =
     response.status(500).json({ error: error.message })
   }
 })
-
 
 publicationsRouter.put('/:id', async (request, response, next) => {
   try {
