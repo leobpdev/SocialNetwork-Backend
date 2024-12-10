@@ -76,7 +76,7 @@ publicationsRouter.get('/:username', async (request, response, next) => {
 
     // Filtrar las publicaciones por el ID del usuario encontrado
     const filter = { user: user._id }
-    const publications = await Publication.find(filter).populate('user', { name: 1, imageUrl: 1 })
+    const publications = await Publication.find(filter).populate('user', { username:1, name: 1, imageUrl: 1 })
 
     // Añadir `hasLiked` a las publicaciones
     const publicationsWithHasLiked = publications.map((publication) => ({
@@ -170,7 +170,7 @@ publicationsRouter.put('/:id', async (request, response, next) => {
     const updatedPublication = await publication.save()
 
     // Ahora devolvemos la publicación actualizada con la información del usuario
-    const populatedPublication = await updatedPublication.populate('user', { name: 1, imageUrl: 1 })
+    const populatedPublication = await updatedPublication.populate('user', { username:1, name: 1, imageUrl: 1 })
 
     // Calculamos si el usuario que hizo la petición ya dio like a la publicación
     const hasLiked = populatedPublication.likes.includes(userId)
