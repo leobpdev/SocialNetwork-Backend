@@ -17,10 +17,30 @@ messagesRouter.get('/', async (request, response) => {
     response.json(messages)
 })
 
+messagesRouter.get('/:username', async (request, response) => {
+    try {
+        const { username } = request.params
+        const user = await User.findOne({ username })
+
+        if (!user) {
+            return response.status(404).json({ error: 'User not found' })
+        }
+
+        // Buscar mensajes donde el remitente o el receptor sea el usuario especificado
+        const messages = await Message.find({
+            $or: [{ sender: user._id }, { receiver: user._id }]
+        }).populate('sender', 'username').populate('receiver', 'username')
+
+        response.json(messages)
+    } catch (error) {
+        response.status(500).json({ error: 'Internal server error' })
+    }
+})
+
 messagesRouter.post('/:username', async (request, response, next) => {
     try {
         const token = getTokenFrom(request)
-        const { content, username } = request.body 
+        const { content, username } = request.body
 
         if (token) {
             const decodedToken = jwt.verify(token, process.env.SECRET)
