@@ -8,6 +8,7 @@ const publicationsRouter = require('./controllers/publications')
 const usersRouter = require('./controllers/users')
 const loginRouter = require('./controllers/login')
 const messagesRouter = require('./controllers/messages')
+const commentsRouter = require('./controllers/comments')
 
 const middleware = require('./utils/middleware')
 const logger = require('./utils/logger')
@@ -37,6 +38,7 @@ app.use('/api/publications', publicationsRouter)
 app.use('/api/users', usersRouter)
 app.use('/api/login', loginRouter)
 app.use('/api/messages', messagesRouter)
+app.use('/api/comments', commentsRouter)
 
 // Rutas adicionales solo para entorno de prueba
 if (process.env.NODE_ENV === 'test') {

@@ -40,7 +40,8 @@ messagesRouter.get('/:username', async (request, response) => {
 messagesRouter.post('/:username', async (request, response, next) => {
     try {
         const token = getTokenFrom(request)
-        const { content, username } = request.body
+        const { username } = request.params
+        const { content } = request.body
 
         if (token) {
             const decodedToken = jwt.verify(token, process.env.SECRET)
