@@ -11,28 +11,23 @@ const getTokenFrom = request => {
     return null
 }
 
-commentsRouter.get('/', async (request, response) => {
-    const comments = await Comment
-        .find({})
-    response.json(comments)
-})
-
-commentsRouter.get('/:id', async (request, response) => {
+commentsRouter.get('/:id', async (request, response, next) => {
     try {
-        const { id } = request.params
-        const publication = await Publication.findById(id)
-
-        if (!publication) {
-            return response.status(404).json({ error: 'Publication not found' })
-        }
-
-        const comments = await Comment.find({ publication: publication._id })
-
-        response.json(comments)
+      const { id } = request.params
+      const publication = await Publication.findById(id)
+  
+      if (!publication) {
+        return response.status(404).json({ error: 'Publication not found' })
+      }
+  
+      const comments = await Comment.find({ publication: publication._id })
+        .populate('user', { username: 1, name: 1, imageUrl: 1 })
+  
+      response.json(comments)
     } catch (error) {
-        response.status(500).json({ error: 'Internal server error' })
+      next(error)
     }
-})
+  })
 
 commentsRouter.post('/:id', async (request, response, next) => {
     try {
