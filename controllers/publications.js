@@ -5,7 +5,7 @@ const User = require('../models/user')
 const multer = require('multer')
 const fs = require('node:fs')
 
-const upload = multer({ dest:'uploads/ '})
+const upload = multer({ dest:'uploads/'})
 
 const getTokenFrom = request => {
   const authorization = request.get('authorization')
@@ -117,10 +117,19 @@ publicationsRouter.post('/', upload.single('image'), async (request, response) =
 
     const imageBase64 = convertImageToBase64(request.file.path)  // Convertimos la imagen a Base64
 
+    // Eliminar el archivo del sistema de archivos
+    fs.unlink(request.file.path, (err) => {
+      if (err) {
+        console.error('Error deleting file:', err)
+      } else {
+        console.log('File deleted successfully:', request.file.path)
+      }
+    })
+
     // Creamos y guardamos la nueva publicación con la imagen en Base64
     const newPublication = new Publication({
       content,
-      imageUrl: `data:image/pngbase64,${imageBase64}`,  // Guardamos la imagen como Base64
+      imageUrl: `data:image/png;base64,${imageBase64}`,  // Guardamos la imagen como Base64
       likes: [],
       user: userId, // Asociar la publicación al usuario autenticado
     })

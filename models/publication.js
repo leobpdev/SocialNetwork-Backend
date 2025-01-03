@@ -3,8 +3,7 @@ const mongoose = require('mongoose')
 const publicationSchema = new mongoose.Schema({
   content: {
     type: String,
-    required: true,
-    minlength: 5
+    required: true
   },
   imageUrl: {
     type: String, 
